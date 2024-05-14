@@ -1,0 +1,9 @@
+References:
+- https://github.com/JakubVojvoda/bayes-classifier
+
+
+
+Projekt:
+- własna implementacja klasyfikatora Bayesian
+- Zależność pomiędzy błędem detekcji skóry (metryką zbalansowaną (np. F-miarą)) a wielkością zbioru uczącego dla klasyfikatora Bayesa z inną liczbą przedziałów histogramu (palety kanałów RGB)
+- Sprawdzenie działanie klasyfikatora dla pomniejszonych zdjęć
