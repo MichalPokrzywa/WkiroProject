@@ -1,6 +1,8 @@
 References:
 - https://github.com/JakubVojvoda/bayes-classifier
-
+- https://machinelearningmastery.com/normal-bayes-classifier-for-image-segmentation-using-opencv/
+- https://github.com/djinn-anthrope/Image_classification
+- https://machinelearningmastery.com/naive-bayes-classifier-scratch-python/
 
 
 Projekt:
