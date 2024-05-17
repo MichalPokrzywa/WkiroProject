@@ -1,16 +1,10 @@
-# This is a sample Python script.
-from sklearn.naive_bayes import GaussianNB
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import sys
+from Front import FrontApp
+from PyQt5.QtWidgets import QApplication
+from PyQt5 import QtWidgets
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    app = QApplication(sys.argv)
+    app_instance = FrontApp()
+    app_instance.initUI()
+    sys.exit(app.exec_())

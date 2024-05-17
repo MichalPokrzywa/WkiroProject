@@ -1,29 +1,41 @@
+# imgLoader.py
+
 import os
-import cv2 
-import numpy as np 
+import cv2
+import numpy as np
 
 def load_images_from_folder(folder):
     images = []
-    for filename in os.listdir(folder):
-        path = os.path.join(folder, filename)
-        if os.path.isfile(path):
-            img = cv2.imread(path)
-            if img is not None:
-                images.append(img)
+    try:
+        for filename in os.listdir(folder):
+            path = os.path.join(folder, filename)
+            if os.path.isfile(path):
+                img = cv2.imread(path)
+                if img is not None:
+                    images.append(img)
+    except Exception as e:
+        print(f"Error loading images: {e}")
     return images
+
 
 def images_to_pixels(images):
     pixels_list = []
-    for img in images:
-        # Przekształć obraz na tablicę pikseli
-        pixels = np.array(img)
-        pixels_list.append(pixels)
+    try:
+        for img in images:
+            pixels = np.array(img)
+            pixels_list.append(pixels)
+    except Exception as e:
+        print(f"Error converting images to pixels: {e}")
     return pixels_list
 
-folder_path = r"C:\Users\wojte\studia\wikro\WkiroProject\Photos\Original\001"
-images = load_images_from_folder(folder_path)
-pixels = images_to_pixels(images)
+def image_names_list(folder):
+    image_names = []
+    try:
+        for filename in os.listdir(folder):
+            path = os.path.join(folder, filename)
+            if os.path.isfile(path) and any(filename.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                image_names.append(filename)
+    except Exception as e:
+        print(f"Error loading image names: {e}")
+    return image_names
 
-# Wyświetlenie rozmiaru każdej tablicy pikseli
-for i, pixels_array in enumerate(pixels):
-    print(f"Rozmiar tablicy pikseli {i + 1}: {pixels_array.shape}")
