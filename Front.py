@@ -3,8 +3,8 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog, QVBoxLayout, QLabel, QVBoxLayout, QGridLayout
 from PyQt5 import  QtCore, QtGui
-
-from imgLoader import load_images_from_folder, images_to_pixels, image_names_list
+from PyQt5.QtWidgets import QLineEdit, QMessageBox
+from imgLoader import load_images_from_folder, images_to_pixels
 from PyQt5.QtGui import QPixmap
 
 class FrontApp(QWidget):
@@ -27,7 +27,14 @@ class FrontApp(QWidget):
         self.process_button.clicked.connect(self.process_images)
         layout.addWidget(self.process_button)
 
-        # Dodaj etykietę do wyświetlania obrazów
+        self.width_input = QLineEdit(self)
+        self.width_input.setPlaceholderText('Enter width')
+        layout.addWidget(self.width_input)
+
+        self.height_input = QLineEdit(self)
+        self.height_input.setPlaceholderText('Enter height')
+        layout.addWidget(self.height_input)
+
         self.image_label = QLabel(self)
         layout.addWidget(self.image_label)
 
@@ -40,24 +47,32 @@ class FrontApp(QWidget):
         self.folder_selected = QFileDialog.getExistingDirectory(self, "Select Folder")
         if self.folder_selected:
             print(f"Selected folder: {self.folder_selected}")
-            image_names = image_names_list(self.folder_selected)
-            '''
-            for i, path in enumerate(image_names):
-                pixmap = QPixmap(path)
-                print(path)
-                self.image_label.setPixmap(pixmap)
-                '''
-            pixmap = QPixmap(QtGui.QPixmap(image_names[0]))
-            print(image_names[0])
-            self.image_label.setPixmap(pixmap)
 
     def process_images(self):
-        if hasattr(self, 'folder_selected'):
-            images = load_images_from_folder(self.folder_selected)
-            pixels = images_to_pixels(images)
+        if not self.folder_selected:
+            QMessageBox.warning(self, "Warning", "Select a folder first.")
+            return
 
-            # Wyświetlenie rozmiaru każdej tablicy pikseli
-            for i, pixels_array in enumerate(pixels):
+        try:
+            new_width = int(self.width_input.text())
+            new_height = int(self.height_input.text())
+        except ValueError:
+            QMessageBox.warning(self, "Warning", "Please enter valid width and height.")
+            return
+        
+        print(new_height, new_width)
+        images = load_images_from_folder(self.folder_selected, new_width, new_height)
+        pixels = images_to_pixels(images)
+
+        # Wyświetlenie rozmiaru każdej tablicy pikseli
+        for i, pixels_array in enumerate(pixels):
                 print(f"Rozmiar tablicy pikseli {i + 1}: {pixels_array.shape}")
         else:
             print("Select a folder first.")
+
+        QMessageBox.information(self, "Info", "Images processed successfully.")
+
+    if __name__ == '__main__':
+        app = QApplication(sys.argv)
+        ex = FrontApp()
+        sys.exit(app.exec_())
