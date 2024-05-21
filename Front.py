@@ -1,22 +1,28 @@
 # front.py
 
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog, QVBoxLayout, QLabel, QVBoxLayout, QGridLayout
-from PyQt5 import  QtCore, QtGui
-from PyQt5.QtWidgets import QLineEdit, QMessageBox
-from imgLoader import load_images_from_folder, images_to_pixels
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog, QVBoxLayout, QLabel, QVBoxLayout, \
+    QGridLayout, QLineEdit, QMessageBox
 from PyQt5.QtGui import QPixmap
+from imgLoader import load_images_from_folder, images_to_pixels
+
+from NaiveBayesClassifier import *
 
 class FrontApp(QWidget):
     def __init__(self):
         super().__init__()
         self.title = 'Folder Selection'
-        self.folder_selected=None
+        self.folder_selected = None
+        self.images = None
+        self.folder_selected_skin = None
+        self.images_skin = None
+        self.folder_selected_test = None
+        self.images_test = None
 
     def initUI(self):
         self.setWindowTitle(self.title)
-        self.resize(800,600)
-        
+        self.resize(800, 600)
+
         layout = QVBoxLayout()
 
         self.select_button = QPushButton('Select Folder', self)
@@ -29,11 +35,17 @@ class FrontApp(QWidget):
 
         self.width_input = QLineEdit(self)
         self.width_input.setPlaceholderText('Enter width')
+        self.width_input.setText('100')
         layout.addWidget(self.width_input)
 
         self.height_input = QLineEdit(self)
         self.height_input.setPlaceholderText('Enter height')
+        self.height_input.setText('100')
         layout.addWidget(self.height_input)
+
+        #self.process_button = QPushButton('Create skin map', self)
+        #self.process_button.clicked.connect(self.create_skin_map)
+        #layout.addWidget(self.process_button)
 
         self.image_label = QLabel(self)
         layout.addWidget(self.image_label)
@@ -41,16 +53,31 @@ class FrontApp(QWidget):
         self.setLayout(layout)
 
         self.show()
-        
 
     def open_file_dialog(self):
-        self.folder_selected = QFileDialog.getExistingDirectory(self, "Select Folder")
+        self.folder_selected = QFileDialog.getExistingDirectory(self, "Select Original Folder")
         if self.folder_selected:
-            print(f"Selected folder: {self.folder_selected}")
+            print(f"Selected original folder: {self.folder_selected}")
+
+        self.folder_selected_skin = QFileDialog.getExistingDirectory(self, "Select Skin Folder")
+        if self.folder_selected_skin:
+            print(f"Selected skin folder: {self.folder_selected_skin}")
+
+        self.folder_selected_test = QFileDialog.getExistingDirectory(self, "Select Test Folder")
+        if self.folder_selected_test:
+            print(f"Selected test folder: {self.folder_selected_test}")
 
     def process_images(self):
         if not self.folder_selected:
-            QMessageBox.warning(self, "Warning", "Select a folder first.")
+            QMessageBox.warning(self, "Warning", "Select original folder first.")
+            return
+
+        if not self.folder_selected_skin:
+            QMessageBox.warning(self, "Warning", "Select skin folder first.")
+            return
+
+        if not self.folder_selected_test:
+            QMessageBox.warning(self, "Warning", "Select test folder first.")
             return
 
         try:
@@ -59,18 +86,29 @@ class FrontApp(QWidget):
         except ValueError:
             QMessageBox.warning(self, "Warning", "Please enter valid width and height.")
             return
-        
+
         print(new_height, new_width)
-        images = load_images_from_folder(self.folder_selected, new_width, new_height)
-        pixels = images_to_pixels(images)
+        self.images = load_images_from_folder(self.folder_selected, new_width, new_height)
+        self.pixels = images_to_pixels(self.images)
+
+        self.images_skin = load_images_from_folder(self.folder_selected_skin, new_width, new_height)
+        #self.pixels_skin = images_to_pixels(self.images_skin)
+
+        self.images_test = load_images_from_folder(self.folder_selected_test, new_width, new_height)
+        #self.pixels_test = images_to_pixels(self.images_test)
 
         # Wyświetlenie rozmiaru każdej tablicy pikseli
-        for i, pixels_array in enumerate(pixels):
-                print(f"Rozmiar tablicy pikseli {i + 1}: {pixels_array.shape}")
+        for i, pixels_array in enumerate(self.pixels):
+            print(f"Rozmiar tablicy pikseli {i + 1}: {pixels_array.shape}")
         else:
             print("Select a folder first.")
 
+        classifier = NaiveBayesClassifier(self.images, self.images_skin, self.images_test)
+        classifier.create_skin_map()
+
         QMessageBox.information(self, "Info", "Images processed successfully.")
+
+
 
     if __name__ == '__main__':
         app = QApplication(sys.argv)
