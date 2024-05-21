@@ -2,7 +2,7 @@
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QFileDialog, QVBoxLayout, QLabel, QVBoxLayout, \
-    QGridLayout, QLineEdit, QMessageBox
+    QGridLayout, QLineEdit, QMessageBox, QComboBox
 from PyQt5.QtGui import QPixmap
 from imgLoader import load_images_from_folder, images_to_pixels
 
@@ -18,6 +18,7 @@ class FrontApp(QWidget):
         self.images_skin = None
         self.folder_selected_test = None
         self.images_test = None
+        self.label = None
 
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -43,6 +44,13 @@ class FrontApp(QWidget):
         self.height_input.setText('100')
         layout.addWidget(self.height_input)
 
+        self.label = QLabel('Select an item from the dropdown', self)
+        layout.addWidget(self.label)
+        self.comboBox = QComboBox(self)
+        self.comboBox.addItems(['Item 1', 'Item 2', 'Item 3', 'Item 4'])
+        self.comboBox.currentIndexChanged.connect(self.on_selection_change)
+
+        layout.addWidget(self.comboBox)
         #self.process_button = QPushButton('Create skin map', self)
         #self.process_button.clicked.connect(self.create_skin_map)
         #layout.addWidget(self.process_button)
@@ -67,6 +75,10 @@ class FrontApp(QWidget):
         if self.folder_selected_test:
             print(f"Selected test folder: {self.folder_selected_test}")
 
+    def on_selection_change(self, i):
+        # Get the selected item text
+        selected_item = self.comboBox.currentText()
+        self.label.setText(f'Selected: {selected_item}')
     def process_images(self):
         if not self.folder_selected:
             QMessageBox.warning(self, "Warning", "Select original folder first.")

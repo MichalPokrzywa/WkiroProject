@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 
+
 class NaiveBayesClassifier:
     def __init__(self, images, images_skin, images_test):
         self.images = [cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb) for img in images]
@@ -20,9 +21,6 @@ class NaiveBayesClassifier:
         non_skin_pixels = []
 
         for original_image_np, skin_mask_np in zip(self.images, self.images_skin):
-            #original_image_np = np.array(original_image)
-            #skin_mask_np = np.array(skin_mask)
-
             mask_skin = skin_mask_np[:, :, 0] != 255
             mask_non_skin = skin_mask_np[:, :, 0] == 255
 
@@ -61,14 +59,17 @@ class NaiveBayesClassifier:
         p_skin_given_rgb = (p_rgb_given_skin * self.p_skin) / p_rgb
         return p_skin_given_rgb
 
-    def classify_image(self, image, threshold=0.5):
+    def classify_image(self, image, threshold=0.8):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
         skin_mask = np.zeros(image.shape[:2], dtype=bool)
+
+        # Vectorized operation
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 rgb = image[i, j]
                 if self.posterior_prob(rgb) > threshold:
                     skin_mask[i, j] = True
+
         return skin_mask
 
     def create_skin_map(self):
@@ -80,13 +81,18 @@ class NaiveBayesClassifier:
         self.p_non_skin = len(self.non_skin_pixels) / (len(self.skin_pixels) + len(self.non_skin_pixels))
 
         # Example usage
-        skin_mask = self.classify_image(self.images_test[0])
-
+        skin_mask = self.classify_image(self.images_test[7])
+        print(self.p_skin)
         # Converting boolean mask to uint8 image for display
         skin_mask_display = (skin_mask * 255).astype(np.uint8)
 
         # Display results using OpenCV
-        cv2.imshow('Original Image', self.images_test[0])
+        cv2.imshow('Original Image', self.images_test[7])
         cv2.imshow('Skin Detection Mask', skin_mask_display)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+# Example usage
+# Load images, images_skin, and images_test before this
+# classifier = NaiveBayesClassifier(images, images_skin, images_test)
+# classifier.create_skin_map()

@@ -26,8 +26,8 @@ def process_image(path, new_width, new_height):
         if img is None:
             return None
         img_resize = cv2.resize(img, (new_width, new_height))
-        img_normalize = normalize_image(img_resize)
-        return img_normalize
+        #img_normalize = normalize_image(img_resize)
+        return img_resize
     except Exception as e:
         print(f"Error processing image {path}: {e}")
         return None
