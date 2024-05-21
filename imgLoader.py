@@ -1,55 +1,51 @@
-# imgLoader.py
-
 import os
 import cv2
 import numpy as np
-from PIL import Image
-
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import cpu_count
+import time
 def load_images_from_folder(folder, new_width, new_height):
     images = []
+    start_time = time.time()  # Start timing
     try:
-        for filename in os.listdir(folder):
-            path = os.path.join(folder, filename)
-            if os.path.isfile(path) and filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                img = cv2.imread(path)
-                img_resize = cv2.resize(img, (new_width, new_height))
-                img_normalize = normalize_image(img_resize)
-                if img_normalize is not None:
-                    images.append(img_normalize)
+        filenames = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]
+        with ThreadPoolExecutor(max_workers=cpu_count()) as executor:
+            results = executor.map(lambda f: process_image(os.path.join(folder, f), new_width, new_height), filenames)
+            for result in results:
+                if result is not None:
+                    images.append(result)
     except Exception as e:
         print(f"Error loading images: {e}")
+    end_time = time.time()  # End timing
+    print(f"Time taken to load images: {end_time - start_time:.2f} seconds")
     return images
 
+def process_image(path, new_width, new_height):
+    try:
+        img = cv2.imread(path)
+        if img is None:
+            return None
+        img_resize = cv2.resize(img, (new_width, new_height))
+        img_normalize = normalize_image(img_resize)
+        return img_normalize
+    except Exception as e:
+        print(f"Error processing image {path}: {e}")
+        return None
 
 def images_to_pixels(images):
-    pixels_list = []
     try:
-        for img in images:
-            pixels = np.array(img)
-            pixels_list.append(pixels)
+        return [np.array(img) for img in images]
     except Exception as e:
         print(f"Error converting images to pixels: {e}")
-    return pixels_list
+        return []
 
 def normalize_image(image):
-    # Konwersja obrazu do przestrzeni YCbCr
     ycbcr_image = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
-    
-    # Rozdzielenie kanałów
     Y, Cr, Cb = cv2.split(ycbcr_image)
-    
-    # Równoważenie histogramu na kanale luminancji (Y)
     Y_eq = cv2.equalizeHist(Y)
-    
-    # Połączenie z powrotem do przestrzeni YCbCr
     ycbcr_image_eq = cv2.merge([Y_eq, Cr, Cb])
-    
-    # Konwersja z powrotem do przestrzeni RGB
     normalized_image = cv2.cvtColor(ycbcr_image_eq, cv2.COLOR_YCrCb2BGR)
-    
     return normalized_image
 
 def normalize_pixel_values(image):
-    # Normalizacja wartości pikseli do przedziału [0, 1]
-    normalized_image = image / 255.0
-    return normalized_image
+    return image / 255.0
