@@ -1,5 +1,8 @@
 import sys
-from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QFileDialog, QVBoxLayout, QLabel, QLineEdit, QMessageBox)
+from PyQt5.QtCore import QRect
+from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QFileDialog, QVBoxLayout, QLabel, QLineEdit,
+                             QMessageBox)
+
 from imgLoader import load_images_from_folder, images_to_pixels
 from NaiveBayesClassifier import NaiveBayesClassifier, evaluate_parameters, plot_results
 
@@ -16,7 +19,8 @@ class FrontApp(QWidget):
         self.images_test = None
         self.folder_selected_test_mask = None
         self.images_test_mask = None
-
+        self.to_resize = False
+        self.scale = 1
         self.initUI()
 
     def initUI(self):
@@ -29,15 +33,12 @@ class FrontApp(QWidget):
         self.select_button.clicked.connect(self.open_file_dialog)
         layout.addWidget(self.select_button)
 
-        self.width_input = QLineEdit(self)
-        self.width_input.setPlaceholderText('Enter width')
-        self.width_input.setText('100')
-        layout.addWidget(self.width_input)
-
-        self.height_input = QLineEdit(self)
-        self.height_input.setPlaceholderText('Enter height')
-        self.height_input.setText('100')
-        layout.addWidget(self.height_input)
+        self.scale_input = QLineEdit(self)
+        self.scale_input.setPlaceholderText('Enter size image multiplier width')
+        self.scale_input.setText('1')
+        self.scale_input.editingFinished.connect(self.on_text_changed)
+        self.scale_input.textChanged.connect(self.on_text_changed)  # Connect textChanged signal as well
+        layout.addWidget(self.scale_input)
 
         self.image_amounts_input = QLineEdit(self)
         self.image_amounts_input.setPlaceholderText('Enter image amounts (comma-separated)')
@@ -46,6 +47,11 @@ class FrontApp(QWidget):
         self.bin_sizes_input = QLineEdit(self)
         self.bin_sizes_input.setPlaceholderText('Enter histogram bin sizes (comma-separated)')
         layout.addWidget(self.bin_sizes_input)
+
+        self.button = QPushButton("Use Resize", self)
+        self.button.setCheckable(True)
+        self.button.clicked.connect(self.changeColor)
+        layout.addWidget(self.button)
 
         self.process_button = QPushButton('Process Images', self)
         self.process_button.clicked.connect(self.process_images)
@@ -56,6 +62,24 @@ class FrontApp(QWidget):
 
         self.setLayout(layout)
         self.show()
+
+    def changeColor(self):
+        if self.button.isChecked():
+            self.button.setStyleSheet("background-color : lightblue")
+            self.to_resize = True
+        else:
+            self.button.setStyleSheet("background-color : lightgrey")
+            self.to_resize = False
+
+    def on_text_changed(self):
+        try:
+            self.scale = float(self.scale_input.text())
+            print(f'Text changed to: {self.scale}')
+        except ValueError:
+            print(f'Invalid input for scale: {self.scale_input.text()}')
+            # Optionally reset to previous valid value or default
+            self.scale = 1
+            #self.scale_input.setText(str(self.scale))
 
     def open_file_dialog(self):
         self.folder_selected = QFileDialog.getExistingDirectory(self, "Select Original Folder")
@@ -77,13 +101,13 @@ class FrontApp(QWidget):
     def process_images(self):
         if not self.folder_selected or not self.folder_selected_skin or not self.folder_selected_test or not self.folder_selected_test_mask:
             QMessageBox.warning(self, "Warning", "Select all folders first.")
-            self.folder_selected="./Photos/Original/001"
-            self.folder_selected_skin="./Photos/Skin/001"
-            self.folder_selected_test="./Photos/Original/003"
-            self.folder_selected_test_mask="./Photos/Skin/003"
+            self.folder_selected = "./Photos/Original/001"
+            self.folder_selected_skin = "./Photos/Skin/001"
+            self.folder_selected_test = "./Photos/Original/003"
+            self.folder_selected_test_mask = "./Photos/Skin/003"
+
         try:
-            new_width = int(self.width_input.text())
-            new_height = int(self.height_input.text())
+            self.scale = float(self.scale_input.text())
         except ValueError:
             QMessageBox.warning(self, "Warning", "Please enter valid width and height.")
             return
@@ -100,10 +124,11 @@ class FrontApp(QWidget):
             QMessageBox.warning(self, "Warning", "Please enter valid histogram bin sizes.")
             bin_sizes = [8, 16, 32, 64, 128, 256]
 
-        self.images = load_images_from_folder(self.folder_selected, new_width, new_height)
-        self.images_skin = load_images_from_folder(self.folder_selected_skin, new_width, new_height)
-        self.images_test = load_images_from_folder(self.folder_selected_test, new_width, new_height)
-        self.images_test_mask = load_images_from_folder(self.folder_selected_test_mask, new_width, new_height)
+        print(f"Scale: {self.scale}")
+        self.images = load_images_from_folder(self.folder_selected, self.scale, self.to_resize)
+        self.images_skin = load_images_from_folder(self.folder_selected_skin, self.scale, self.to_resize)
+        self.images_test = load_images_from_folder(self.folder_selected_test, self.scale, self.to_resize)
+        self.images_test_mask = load_images_from_folder(self.folder_selected_test_mask, self.scale, self.to_resize)
 
         classifier = NaiveBayesClassifier(self.images, self.images_skin, self.images_test, self.images_test_mask)
         image_amount_results, bin_size_results = evaluate_parameters(

@@ -4,13 +4,13 @@ import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import cpu_count
 import time
-def load_images_from_folder(folder, new_width, new_height):
+def load_images_from_folder(folder, scale, resize):
     images = []
     start_time = time.time()  # Start timing
     try:
         filenames = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]
         with ThreadPoolExecutor(max_workers=cpu_count()) as executor:
-            results = executor.map(lambda f: process_image(os.path.join(folder, f), new_width, new_height), filenames)
+            results = executor.map(lambda f: process_image(os.path.join(folder, f), scale, resize), filenames)
             for result in results:
                 if result is not None:
                     images.append(result)
@@ -20,13 +20,17 @@ def load_images_from_folder(folder, new_width, new_height):
     print(f"Time taken to load images: {end_time - start_time:.2f} seconds")
     return images
 
-def process_image(path, new_width, new_height):
+def process_image(path, scale, resize):
     try:
         img = cv2.imread(path)
         if img is None:
             return None
-        img_resize = cv2.resize(img, (new_width, new_height))
-        #img_normalize = normalize_image(img_resize)
+        height, width, channels = img.shape
+        if resize:
+            img_resize = cv2.resize(img, (int(width / scale), int(height / scale)))
+        else:
+            img_resize = img
+        # img_normalize = normalize_image(img_resize)
         return img_resize
     except Exception as e:
         print(f"Error processing image {path}: {e}")
