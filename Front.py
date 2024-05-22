@@ -36,16 +36,16 @@ class FrontApp(QWidget):
         self.scale_input = QLineEdit(self)
         self.scale_input.setPlaceholderText('Enter size image multiplier width')
         self.scale_input.setText('1')
-        self.scale_input.editingFinished.connect(self.on_text_changed)
-        self.scale_input.textChanged.connect(self.on_text_changed)  # Connect textChanged signal as well
         layout.addWidget(self.scale_input)
 
         self.image_amounts_input = QLineEdit(self)
         self.image_amounts_input.setPlaceholderText('Enter image amounts (comma-separated)')
+        self.image_amounts_input.setText('10, 20, 40, 80, 160, 320, 640, 1280')
         layout.addWidget(self.image_amounts_input)
 
         self.bin_sizes_input = QLineEdit(self)
         self.bin_sizes_input.setPlaceholderText('Enter histogram bin sizes (comma-separated)')
+        self.bin_sizes_input.setText('8, 16, 32, 64, 128, 256')
         layout.addWidget(self.bin_sizes_input)
 
         self.button = QPushButton("Use Resize", self)
@@ -103,8 +103,8 @@ class FrontApp(QWidget):
             QMessageBox.warning(self, "Warning", "Select all folders first.")
             self.folder_selected = "./Photos/Original/001"
             self.folder_selected_skin = "./Photos/Skin/001"
-            self.folder_selected_test = "./Photos/Original/003"
-            self.folder_selected_test_mask = "./Photos/Skin/003"
+            self.folder_selected_test = "./Photos/Original/002"
+            self.folder_selected_test_mask = "./Photos/Skin/002"
 
         try:
             self.scale = float(self.scale_input.text())
