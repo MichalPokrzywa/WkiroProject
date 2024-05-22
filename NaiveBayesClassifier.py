@@ -1,9 +1,8 @@
+import concurrent.futures
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.metrics import precision_score, recall_score, f1_score
 import time
-from PIL import Image
 import os
 
 class NaiveBayesClassifier:
@@ -21,19 +20,12 @@ class NaiveBayesClassifier:
         self.p_non_skin = None
         self.p_skin = None
 
-    def separate_skin_pixels(self):
-        skin_pixels = []
-        non_skin_pixels = []
+    def separate_skin_pixels(self, original_image_np, skin_mask_np):
+        mask_skin = skin_mask_np[:, :, 0] != 255
+        mask_non_skin = skin_mask_np[:, :, 0] == 255
 
-        for original_image_np, skin_mask_np in zip(self.images, self.images_skin):
-            mask_skin = skin_mask_np[:, :, 0] != 255
-            mask_non_skin = skin_mask_np[:, :, 0] == 255
-
-            skin_pixels.append(original_image_np[mask_skin])
-            non_skin_pixels.append(original_image_np[mask_non_skin])
-
-        skin_pixels = np.vstack(skin_pixels)
-        non_skin_pixels = np.vstack(non_skin_pixels)
+        skin_pixels = original_image_np[mask_skin]
+        non_skin_pixels = original_image_np[mask_non_skin]
 
         return skin_pixels, non_skin_pixels
 
@@ -68,7 +60,6 @@ class NaiveBayesClassifier:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
         skin_mask = np.zeros(image.shape[:2], dtype=bool)
 
-        # Vectorized operation
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 rgb = image[i, j]
@@ -78,7 +69,16 @@ class NaiveBayesClassifier:
         return skin_mask
 
     def create_skin_map(self, bins=32):
-        self.skin_pixels, self.non_skin_pixels = self.separate_skin_pixels()
+        skin_pixels = []
+        non_skin_pixels = []
+        for original_image_np, skin_mask_np in zip(self.images, self.images_skin):
+            skin_px, non_skin_px = self.separate_skin_pixels(original_image_np, skin_mask_np)
+            skin_pixels.append(skin_px)
+            non_skin_pixels.append(non_skin_px)
+
+        self.skin_pixels = np.vstack(skin_pixels)
+        self.non_skin_pixels = np.vstack(non_skin_pixels)
+
         self.skin_hist, self.skin_edges = self.estimate_pdf(self.skin_pixels, bins=bins)
         self.non_skin_hist, self.non_skin_edges = self.estimate_pdf(self.non_skin_pixels, bins=bins)
 
@@ -116,25 +116,20 @@ def evaluate_parameters(images, images_skin, images_test, images_test_mask, imag
     image_amount_results = {}
     bin_size_results = {}
 
-    # Iterate over the number of images to use
-    for amount in image_amounts:
-        print(f"Evaluating with {amount} images...")
-        image_amount_results[amount] = {}
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for amount in image_amounts:
+            print(f"Evaluating with {amount} images...")
+            image_amount_results[amount] = {}
 
-        # Calculate the timestamp before the loops
-        timestamp = time.strftime("%Y%m%d-%H%M%S")
-        save_path = "./results/"
-        save_directory=f"{save_path}/{timestamp}/"
-        os.makedirs(save_directory, exist_ok=True)
-        for bins in bin_sizes:
-            print(f"Evaluating with {bins} histogram bins...")
-            classifier = NaiveBayesClassifier(images[:amount], images_skin[:amount], images_test, images_test_mask)
-            precision, recall, f1, gen_skin = classifier.create_skin_map(bins=bins)
+            for bins in bin_sizes:
+                print(f"Evaluating with {bins} histogram bins...")
+                classifier = NaiveBayesClassifier(images[:amount], images_skin[:amount], images_test, images_test_mask)
+                future = executor.submit(classifier.create_skin_map, bins)
+                futures.append((amount, bins, future))
 
-            # Save the generated skin map as an image
-            skin_gen_amount_bins = Image.fromarray((gen_skin * 255).astype(np.uint8))
-            save_filename = f"{save_directory}gen_skin_{amount}_images_{bins}_bins.png"
-            skin_gen_amount_bins.save(save_filename)
+        for amount, bins, future in futures:
+            precision, recall, f1, gen_skin = future.result()
 
             image_amount_results[amount][bins] = (precision, recall, f1)
             if bins not in bin_size_results:
