@@ -103,8 +103,8 @@ class FrontApp(QWidget):
             QMessageBox.warning(self, "Warning", "Select all folders first.")
             self.folder_selected = "./Photos/Original/001"
             self.folder_selected_skin = "./Photos/Skin/001"
-            self.folder_selected_test = "./Photos/Original/002"
-            self.folder_selected_test_mask = "./Photos/Skin/002"
+            self.folder_selected_test = "./Photos/Original/003"
+            self.folder_selected_test_mask = "./Photos/Skin/003"
 
         try:
             self.scale = float(self.scale_input.text())
