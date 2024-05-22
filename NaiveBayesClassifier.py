@@ -2,7 +2,9 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_score, recall_score, f1_score
-
+import time
+from PIL import Image
+import os
 
 class NaiveBayesClassifier:
     def __init__(self, images, images_skin, images_test, images_test_mask):
@@ -62,7 +64,7 @@ class NaiveBayesClassifier:
         p_skin_given_rgb = (p_rgb_given_skin * self.p_skin) / p_rgb
         return p_skin_given_rgb
 
-    def classify_image(self, image, threshold=0.9):
+    def classify_image(self, image, threshold=0.5):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
         skin_mask = np.zeros(image.shape[:2], dtype=bool)
 
@@ -107,7 +109,7 @@ class NaiveBayesClassifier:
         print(f'Recall: {recall:.4f}')
         print(f'F1 Score: {f1:.4f}')
 
-        return precision, recall, f1
+        return precision, recall, f1, skin_mask
 
 
 def evaluate_parameters(images, images_skin, images_test, images_test_mask, image_amounts, bin_sizes):
@@ -119,10 +121,20 @@ def evaluate_parameters(images, images_skin, images_test, images_test_mask, imag
         print(f"Evaluating with {amount} images...")
         image_amount_results[amount] = {}
 
+        # Calculate the timestamp before the loops
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        save_path = "./results/"
+        save_directory=f"{save_path}/{timestamp}/"
+        os.makedirs(save_directory, exist_ok=True)
         for bins in bin_sizes:
             print(f"Evaluating with {bins} histogram bins...")
             classifier = NaiveBayesClassifier(images[:amount], images_skin[:amount], images_test, images_test_mask)
-            precision, recall, f1 = classifier.create_skin_map(bins=bins)
+            precision, recall, f1, gen_skin = classifier.create_skin_map(bins=bins)
+
+            # Save the generated skin map as an image
+            skin_gen_amount_bins = Image.fromarray((gen_skin * 255).astype(np.uint8))
+            save_filename = f"{save_directory}gen_skin_{amount}_images_{bins}_bins.png"
+            skin_gen_amount_bins.save(save_filename)
 
             image_amount_results[amount][bins] = (precision, recall, f1)
             if bins not in bin_size_results:
@@ -132,15 +144,17 @@ def evaluate_parameters(images, images_skin, images_test, images_test_mask, imag
     return image_amount_results, bin_size_results
 
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 def plot_results(image_amount_results, bin_size_results):
     # Plot for image amounts
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(14, 6))
 
     plt.subplot(1, 2, 1)
     for bins, results in bin_size_results.items():
         image_amounts = list(results.keys())
-        #detection_errors = [1 - results[amount][2] for amount in image_amounts]  # Detection error = 1 - F1 Score
-        detection_errors = [results[amount][2] for amount in image_amounts]  # Detection error = 1 - F1 Score
+        detection_errors = [1 - results[amount][2] for amount in image_amounts]  # Detection error
         plt.plot(image_amounts, detection_errors, label=f'{bins} bins', marker='o')
     plt.xlabel('Number of Images')
     plt.ylabel('Detection Error')
@@ -150,20 +164,31 @@ def plot_results(image_amount_results, bin_size_results):
 
     # Plot for bin sizes
     plt.subplot(1, 2, 2)
-    for amount, results in image_amount_results.items():
-        bin_sizes = list(results.keys())
-        #detection_errors = [1 - results[bins][2] for bins in bin_sizes]  # Detection error = 1 - F1 Score
-        detection_errors = [results[bins][2] for bins in bin_sizes]  # Detection error = 1 - F1 Score
+    bin_sizes = sorted(next(iter(image_amount_results.values())).keys())
+    num_groups = len(image_amount_results)
+    bar_width = 0.8 / num_groups  # Adjust bar width to ensure space between groups
+    offsets = np.linspace(-0.4, 0.4, num_groups)  # Center the bars around each bin size
 
-        plt.plot(bin_sizes, detection_errors, label=f'{amount} images', marker='o')
+    for i, (amount, results) in enumerate(image_amount_results.items()):
+        detection_errors = [1 - results[bins][2] for bins in bin_sizes]  # Detection error
+        bar_positions = np.arange(len(bin_sizes)) + offsets[i]
+        plt.bar(bar_positions, detection_errors, width=bar_width, label=f'{amount} images')
+
     plt.xlabel('Histogram Bin Size')
     plt.ylabel('Detection Error')
     plt.title('Detection Error vs Histogram Bin Size')
+    plt.xticks(np.arange(len(bin_sizes)), bin_sizes)
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
     plt.show()
+
+# Example usage:
+# image_amount_results = {50: {10: [0, 0, 0.1], 20: [0, 0, 0.15], 30: [0, 0, 0.2]}, 100: {10: [0, 0, 0.05], 20: [0, 0, 0.1], 30: [0, 0, 0.15]}}
+# bin_size_results = {10: {50: [0, 0, 0.1], 100: [0, 0, 0.05]}, 20: {50: [0, 0, 0.15], 100: [0, 0, 0.1]}, 30: {50: [0, 0, 0.2], 100: [0, 0, 0.15]}}
+# plot_results(image_amount_results, bin_size_results)
+
 
 # Example usage
 # Load images, images_skin, images_test, and images_test_mask before this
