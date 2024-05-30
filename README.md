@@ -54,7 +54,8 @@ Metoda `create_skin_map` wykonuje cały proces uczenia i testowania klasyfikator
 ## Wykresy
 - **Wykres 1:** Błąd detekcji w zależności od liczby obrazów.
 - **Wykres 2:** Błąd detekcji w zależności od rozmiaru koszyka histogramu.
-![Diagram](https://github.com/MichalPokrzywa/WkiroProject/blob/main/diagram.png)
+![Diagram](https://github.com/MichalPokrzywa/WkiroProject/blob/main/wykres.png)
+
 Obserwacje z wykresów wykazują, że większa liczba obrazów i większe koszyki histogramów poprawiają dokładność detekcji skóry, natomiast zmniejszenie rozmiaru zdjęć wpływa negatywnie na precyzję klasyfikacji.
 
 ## Link do repozytorium
