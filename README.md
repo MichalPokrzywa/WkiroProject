@@ -49,7 +49,7 @@ Metoda `create_skin_map` wykonuje cały proces uczenia i testowania klasyfikator
 ## Wyniki i wnioski
 - **Błąd detekcji maleje wraz ze wzrostem liczby obrazów.**
 - **Większe koszyki histogramów (więcej bins) prowadzą do mniejszego błędu detekcji.**
-- **Zmniejszenie zdjęć prowadzi do wyższego błędu detekcji.**
+- **Zmniejszenie zdjęć prowadzi do niższego błędu detekcji.**
 
 ## Wykresy
 - **Wykres 1:** Błąd detekcji w zależności od liczby obrazów.
@@ -57,7 +57,7 @@ Metoda `create_skin_map` wykonuje cały proces uczenia i testowania klasyfikator
 
 ![Diagram](wykres.png)
 
-Obserwacje z wykresów wykazują, że większa liczba obrazów i większe koszyki histogramów poprawiają dokładność detekcji skóry, natomiast zmniejszenie rozmiaru zdjęć wpływa negatywnie na precyzję klasyfikacji.
+Obserwacje z wykresów wykazują, że większa liczba obrazów i większe koszyki histogramów poprawiają dokładność detekcji skóry oraz zmniejszenie rozmiaru zdjęć wpływa pozytywnie na precyzję klasyfikacji.
 
 
 
